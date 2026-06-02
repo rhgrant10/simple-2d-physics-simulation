@@ -26,13 +26,13 @@ func NewBall(
 	density float64,
 	color color.Color,
 	restitution float64,
-	friction float64,
+	friction physics.KineticFriction,
 ) Ball {
 	area := math.Pi * radius * radius
 	mass := density * area
 	return Ball{
 		Transform: geo.Transform{Pos: pos},
-		RigidBody: physics.RigidBody{Velocity: vel, Mass: mass, Restitution: restitution, Friction: friction},
+		RigidBody: physics.RigidBody{Velocity: vel, Mass: mass, Restitution: restitution, Friction: float64(friction)},
 		Radius:    radius,
 		Color:     color,
 		Collider:  physics.CircleCollider{Radius: radius},

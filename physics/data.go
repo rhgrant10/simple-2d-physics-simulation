@@ -2,6 +2,16 @@ package physics
 
 import "github.com/rhgrant10/sim/geo"
 
-const LITTE_G = 9.8
+const LITTE_G = 1 //9.8
 
 var Gravity = geo.Vec2{X: 0, Y: -LITTE_G}
+
+type KineticFriction float64
+
+const (
+	FrictionIce      KineticFriction = 0.03
+	FrictionSteel    KineticFriction = 0.15
+	FrictionWood     KineticFriction = 0.3
+	FrictionConcrete KineticFriction = 0.6
+	FrictionRubber   KineticFriction = 0.7
+)

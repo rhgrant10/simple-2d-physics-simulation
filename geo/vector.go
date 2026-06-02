@@ -7,6 +7,13 @@ type Vec2 struct {
 	Y float64
 }
 
+func Vec2FromPolar(r, deg float64) Vec2 {
+	return Vec2{
+		X: math.Cos(math.Pi*deg/180) * r,
+		Y: math.Sin(math.Pi*deg/180) * r,
+	}
+}
+
 func (a Vec2) Add(b Vec2) Vec2 {
 	return Vec2{X: a.X + b.X, Y: a.Y + b.Y}
 }
