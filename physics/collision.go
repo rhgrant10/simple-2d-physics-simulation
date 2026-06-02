@@ -80,15 +80,36 @@ func ResolveCollision(a, b Collidable, info CollisionInfo) {
 	inverseMassSum := a.GetRigidBody().InverseMass() + b.GetRigidBody().InverseMass()
 
 	av, bv := a.GetRigidBody().Velocity, b.GetRigidBody().Velocity
-	relVel := av.Sub(bv).Dot(n)
+	relVelVec := av.Sub(bv)
+	relVel := relVelVec.Dot(n)
 
 	if relVel < 0 {
 		restitution := (a.GetRigidBody().Restitution + b.GetRigidBody().Restitution) / 2
 		if inverseMassSum > 0 {
+			// apply the collision impulse
 			j := -(1 + restitution) * relVel / inverseMassSum
 			impulse := n.Scale(j)
 			a.GetRigidBody().Velocity = av.Add(impulse.Scale(a.GetRigidBody().InverseMass()))
 			b.GetRigidBody().Velocity = bv.Sub(impulse.Scale(b.GetRigidBody().InverseMass()))
+
+			// handle friction
+			noSpinFactor := 2.0 / 7.0
+			t := relVelVec.Sub(n.Scale(relVel))
+			if t.Magnitude() > 1e-6 {
+				t = t.Normalized()
+				relVelT := relVelVec.Dot(t)
+				mu := noSpinFactor * (a.GetRigidBody().Friction + b.GetRigidBody().Friction) / 2
+				jt := -relVelT / inverseMassSum
+				// Coulomb cone
+				if jt > mu*j {
+					jt = mu * j
+				} else if jt < -mu*j {
+					jt = -mu * j
+				}
+				frictionImpulse := t.Scale(jt)
+				a.GetRigidBody().Velocity = a.GetRigidBody().Velocity.Add(frictionImpulse.Scale(a.GetRigidBody().InverseMass()))
+				b.GetRigidBody().Velocity = b.GetRigidBody().Velocity.Sub(frictionImpulse.Scale(b.GetRigidBody().InverseMass()))
+			}
 		}
 	}
 

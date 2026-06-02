@@ -25,10 +25,11 @@ func NewBox(
 	height float64,
 	color color.Color,
 	restitution float64,
+	friction float64,
 ) Box {
 	return Box{
 		Transform: geo.Transform{Pos: center},
-		RigidBody: physics.RigidBody{Restitution: restitution},
+		RigidBody: physics.RigidBody{Restitution: restitution, Friction: friction},
 		Width:     width,
 		Height:    height,
 		Color:     color,

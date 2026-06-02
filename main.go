@@ -93,6 +93,7 @@ func main() {
 		2,
 		color.White,
 		0.75,
+		0.15,
 	)
 	ball2 := scene.NewBall(
 		geo.Vec2{X: 5, Y: 11},
@@ -101,6 +102,7 @@ func main() {
 		2,
 		color.RGBA{R: 0, G: 0, B: 255, A: 255},
 		0.75,
+		0.15,
 	)
 	floor := scene.NewBox(
 		geo.Vec2{X: -20, Y: -1},
@@ -108,6 +110,7 @@ func main() {
 		2,
 		color.RGBA{R: 255, G: 128, B: 128, A: 255},
 		0.65,
+		0.6,
 	)
 
 	game := Game{
