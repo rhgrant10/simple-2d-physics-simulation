@@ -9,9 +9,9 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime/pprof"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -23,16 +23,53 @@ import (
 	"github.com/rhgrant10/sim/scene"
 )
 
+var (
+	frameCount int      = 0
+	cpuProf    *os.File = nil
+)
+
 type Game struct {
-	Renderer      scene.Renderer
-	Cam           camera.Camera
-	Entities      []scene.Entity
-	lastUpdatedAt time.Time
+	Renderer        scene.Renderer
+	Cam             camera.Camera
+	DynamicEntities []scene.Entity
+	StaticEntities  []scene.Entity
+	SpatialHash     geo.SpatialHash
+	closePairs      []geo.PairKey
+	lastUpdatedAt   time.Time
+}
+
+func NewGame(entities []scene.Entity, camera camera.Camera, dynamicObjectRadius float64) *Game {
+	staticEntities := []scene.Entity{}
+	dynamicEntities := []scene.Entity{}
+	for i := range entities {
+		if entities[i].GetRigidBody().IsStatic() {
+			staticEntities = append(staticEntities, entities[i])
+		} else {
+			dynamicEntities = append(dynamicEntities, entities[i])
+		}
+	}
+
+	expectedCellCount := 3 * len(dynamicEntities)
+	expectedPairCount := expectedCellCount * expectedCellCount
+
+	return &Game{
+		DynamicEntities: dynamicEntities,
+		StaticEntities:  staticEntities,
+		Renderer:        *scene.NewRenderer(),
+		Cam:             camera,
+		SpatialHash:     *geo.NewSpatialHash(dynamicObjectRadius*2000, expectedCellCount, expectedPairCount),
+	}
 }
 
 func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return errors.New("Until next time")
+	}
+
+	frameCount++
+	if frameCount == 60 {
+		pprof.StopCPUProfile()
+		cpuProf.Close()
 	}
 
 	if g.lastUpdatedAt.IsZero() {
@@ -41,22 +78,36 @@ func (g *Game) Update() error {
 	}
 
 	now := time.Now()
-	dt := now.Sub(g.lastUpdatedAt).Seconds()
+	dt := now.Sub(g.lastUpdatedAt).Seconds() / 10
 	g.lastUpdatedAt = now
 
-	for i := range g.Entities {
-		for j := range g.Entities {
-			if i == j {
-				continue
-			}
-			if info, ok := physics.DetectCollision(g.Entities[i], g.Entities[j]); ok {
-				physics.ResolveCollision(g.Entities[i], g.Entities[j], info)
+	// collisions with dynamic objects
+	g.SpatialHash.Clear()
+	for i := range g.DynamicEntities {
+		if !g.DynamicEntities[i].GetRigidBody().IsStatic() {
+			transform := *g.DynamicEntities[i].GetTransform()
+			g.SpatialHash.Insert(i, g.DynamicEntities[i].GetCollider().AABB(transform))
+		}
+	}
+
+	g.closePairs = g.SpatialHash.CandidatePairs(g.closePairs)
+	for _, p := range g.closePairs {
+		if info, ok := physics.DetectCollision(g.DynamicEntities[p.A], g.DynamicEntities[p.B]); ok {
+			physics.ResolveCollision(g.DynamicEntities[p.A], g.DynamicEntities[p.B], info)
+		}
+	}
+
+	// collisions with static objects
+	for d := range g.DynamicEntities {
+		for s := range g.StaticEntities {
+			if info, ok := physics.DetectCollision(g.DynamicEntities[d], g.StaticEntities[s]); ok {
+				physics.ResolveCollision(g.DynamicEntities[d], g.StaticEntities[s], info)
 			}
 		}
 	}
 
-	for i := range g.Entities {
-		g.Entities[i].Update(dt)
+	for i := range g.DynamicEntities {
+		g.DynamicEntities[i].Update(dt)
 	}
 	return nil
 }
@@ -64,16 +115,19 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.1f\nFPS: %.1f", ebiten.ActualTPS(), ebiten.ActualFPS()))
 	g.Renderer.Begin()
-	for i := range g.Entities {
-		g.Entities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
+	for i := range g.StaticEntities {
+		g.StaticEntities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
+	}
+	for i := range g.DynamicEntities {
+		g.DynamicEntities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
 	}
 	g.Renderer.Flush(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	screenWidth, screenHeight = ebiten.Monitor().Size()
-	screenWidth = (screenWidth * 7) / 10
-	screenHeight = (screenHeight * 7) / 10
+	// screenWidth = (screenWidth * 7) / 10
+	// screenHeight = (screenHeight * 7) / 10
 	return
 }
 
@@ -95,9 +149,11 @@ func seedFromString(s string) int64 {
 
 func main() {
 	// set up a profiler
-	go func() {
-		http.ListenAndServe("localhost:6060", nil)
-	}()
+	// go func() {
+	// 	http.ListenAndServe("localhost:6060", nil)
+	// }()
+	cpuProf, _ := os.Create("cpu.prof")
+	pprof.StartCPUProfile(cpuProf)
 
 	// establish repeatable randomness
 	var seedStr string
@@ -111,7 +167,7 @@ func main() {
 	rng := rand.New(rand.NewSource(seed))
 
 	// set up a full screen situation
-	// ebiten.SetFullscreen(true)
+	ebiten.SetFullscreen(true)
 	pixelWidth, pixelHeight := ebiten.Monitor().Size()
 	scale := ebiten.Monitor().DeviceScaleFactor()
 	cameraWidth := float64(pixelWidth) * scale
@@ -146,7 +202,13 @@ func main() {
 		physics.FrictionConcrete,
 	)
 	entities := []scene.Entity{&floor, &leftWall}
+
+	maxBallRadius := 0.0
 	for range 1000 {
+		radius := rng.Float64()*.2 + 0.5
+		if radius > maxBallRadius {
+			maxBallRadius = radius
+		}
 		ball := scene.NewBall(
 			geo.Vec2{
 				X: rng.Float64()*80 - 40 - 20,
@@ -156,7 +218,7 @@ func main() {
 				rng.Float64()*20,
 				rng.Float64()*360,
 			),
-			rng.Float64()*.2+0.5,
+			radius,
 			rng.Float64()*0.1+2,
 			scene.HSLToRGB(
 				rng.Float64()*360,
@@ -170,13 +232,8 @@ func main() {
 	}
 
 	// run the simulation
-	game := Game{
-		Renderer: *scene.NewRenderer(),
-		Cam:      camera,
-		Entities: entities,
-	}
-
-	if err := ebiten.RunGame(&game); err != nil {
+	game := NewGame(entities, camera, maxBallRadius)
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }

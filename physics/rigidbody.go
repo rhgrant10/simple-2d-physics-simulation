@@ -10,8 +10,12 @@ type RigidBody struct {
 }
 
 func (rb *RigidBody) InverseMass() float64 {
-	if rb.Mass == 0.0 {
+	if rb.IsStatic() {
 		return 0
 	}
 	return 1 / rb.Mass
+}
+
+func (rb *RigidBody) IsStatic() bool {
+	return rb.Mass == 0.0
 }
