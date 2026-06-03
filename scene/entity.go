@@ -1,7 +1,6 @@
 package scene
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/rhgrant10/sim/camera"
 	"github.com/rhgrant10/sim/physics"
 )
@@ -11,7 +10,8 @@ type Updatable interface {
 }
 
 type Drawable interface {
-	Draw(screen *ebiten.Image, camera *camera.Camera)
+	GetBrush(c *camera.Camera) Brush
+	// Draw(screen *ebiten.Image, camera *camera.Camera)
 }
 
 type Entity interface {

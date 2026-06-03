@@ -3,8 +3,6 @@ package scene
 import (
 	"image/color"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/rhgrant10/sim/camera"
 	"github.com/rhgrant10/sim/geo"
 	"github.com/rhgrant10/sim/physics"
@@ -15,15 +13,16 @@ type Box struct {
 	RigidBody physics.RigidBody
 	Width     float64
 	Height    float64
-	Color     color.Color
+	Color     color.RGBA
 	Collider  physics.BoxCollider
+	Brush     BoxBrush
 }
 
 func NewBox(
 	center geo.Vec2,
 	width float64,
 	height float64,
-	color color.Color,
+	color color.RGBA,
 	restitution float64,
 	friction physics.KineticFriction,
 ) Box {
@@ -49,27 +48,13 @@ func (b *Box) GetRigidBody() *physics.RigidBody {
 	return &b.RigidBody
 }
 
-func (b *Box) Update(dt float64) {
-	// b.RigidBody.Velocity.X = 0
-	// b.RigidBody.Velocity.Y = 0
+func (b *Box) GetBrush(camera *camera.Camera) Brush {
+	b.Brush.center = camera.ToScreenPoint(b.Transform.Pos)
+	b.Brush.width = b.Width * camera.Scale
+	b.Brush.height = b.Height * camera.Scale
+	b.Brush.color = b.Color
+	return &b.Brush
 }
 
-func (b *Box) Draw(screen *ebiten.Image, camera *camera.Camera) {
-	point := camera.ToScreenPoint(
-		geo.Vec2{
-			X: b.Transform.Pos.X - b.Width/2,
-			Y: b.Transform.Pos.Y + b.Height/2,
-		},
-	)
-	width := b.Width * camera.Scale
-	height := b.Height * camera.Scale
-	vector.FillRect(
-		screen,
-		float32(point.X),
-		float32(point.Y),
-		float32(width),
-		float32(height),
-		b.Color,
-		camera.Antialias,
-	)
+func (b *Box) Update(dt float64) {
 }

@@ -4,8 +4,6 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/rhgrant10/sim/camera"
 	"github.com/rhgrant10/sim/geo"
 	"github.com/rhgrant10/sim/physics"
@@ -15,8 +13,9 @@ type Ball struct {
 	Transform geo.Transform
 	RigidBody physics.RigidBody
 	Radius    float64
-	Color     color.Color
+	Color     color.RGBA
 	Collider  physics.CircleCollider
+	Brush     CircleBrush
 }
 
 func NewBall(
@@ -24,7 +23,7 @@ func NewBall(
 	vel geo.Vec2,
 	radius float64,
 	density float64,
-	color color.Color,
+	color color.RGBA,
 	restitution float64,
 	friction physics.KineticFriction,
 ) Ball {
@@ -51,21 +50,15 @@ func (b *Ball) GetRigidBody() *physics.RigidBody {
 	return &b.RigidBody
 }
 
+func (b *Ball) GetBrush(camera *camera.Camera) Brush {
+	b.Brush.center = camera.ToScreenPoint(b.Transform.Pos)
+	b.Brush.radius = b.Radius * camera.Scale
+	b.Brush.color = b.Color
+	return &b.Brush
+}
+
 func (b *Ball) Update(dt float64) {
 	accel := physics.Gravity // todo: dynamics
 	b.Transform.Pos = b.Transform.Pos.Add(b.RigidBody.Velocity.Scale(dt)).Add(accel.Scale(dt * dt).Scale(0.5))
 	b.RigidBody.Velocity = b.RigidBody.Velocity.Add(accel.Scale(dt))
-}
-
-func (b *Ball) Draw(screen *ebiten.Image, camera *camera.Camera) {
-	point := camera.ToScreenPoint(b.Transform.Pos)
-	radius := b.Radius * camera.Scale
-	vector.FillCircle(
-		screen,
-		float32(point.X),
-		float32(point.Y),
-		float32(radius),
-		b.Color,
-		camera.Antialias,
-	)
 }

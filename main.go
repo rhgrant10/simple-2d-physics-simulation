@@ -9,6 +9,8 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 )
 
 type Game struct {
+	Renderer      scene.Renderer
 	Cam           camera.Camera
 	Entities      []scene.Entity
 	lastUpdatedAt time.Time
@@ -59,14 +62,19 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.1f\nFPS: %.1f", ebiten.ActualTPS(), ebiten.ActualFPS()))
+	g.Renderer.Begin()
 	for i := range g.Entities {
-		g.Entities[i].Draw(screen, &g.Cam)
+		g.Entities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
 	}
+	g.Renderer.Flush(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return ebiten.Monitor().Size()
+	screenWidth, screenHeight = ebiten.Monitor().Size()
+	screenWidth = (screenWidth * 7) / 10
+	screenHeight = (screenHeight * 7) / 10
+	return
 }
 
 func (g *Game) LayoutF(outsideWidth, outsideHeight float64) (screenWidth, screenHeight float64) {
@@ -86,6 +94,11 @@ func seedFromString(s string) int64 {
 }
 
 func main() {
+	// set up a profiler
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
+
 	// establish repeatable randomness
 	var seedStr string
 	if len(os.Args) < 2 {
@@ -98,7 +111,7 @@ func main() {
 	rng := rand.New(rand.NewSource(seed))
 
 	// set up a full screen situation
-	ebiten.SetFullscreen(true)
+	// ebiten.SetFullscreen(true)
 	pixelWidth, pixelHeight := ebiten.Monitor().Size()
 	scale := ebiten.Monitor().DeviceScaleFactor()
 	cameraWidth := float64(pixelWidth) * scale
@@ -115,7 +128,7 @@ func main() {
 	camera.Scale /= 2
 
 	// create the objects in the scene
-	containerColor := color.White
+	containerColor := color.RGBA{R: 255, G: 255, B: 255, A: 255}
 	floor := scene.NewBox(
 		geo.Vec2{X: -20, Y: -1},
 		80,
@@ -158,6 +171,7 @@ func main() {
 
 	// run the simulation
 	game := Game{
+		Renderer: *scene.NewRenderer(),
 		Cam:      camera,
 		Entities: entities,
 	}
