@@ -18,24 +18,31 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/rhgrant10/sim/camera"
+	"github.com/rhgrant10/sim/collision"
 	"github.com/rhgrant10/sim/geo"
 	"github.com/rhgrant10/sim/physics"
 	"github.com/rhgrant10/sim/scene"
 )
 
 var (
-	frameCount int      = 0
-	cpuProf    *os.File = nil
+	avgBallSize              = 5.0
+	cpuProf         *os.File = nil
+	enableProfiling          = true
+	maxBallVariance          = 0.1
+	numBalls                 = 5
+	gravityScale             = 1.0
 )
 
 type Game struct {
 	Renderer        scene.Renderer
 	Cam             camera.Camera
+	Broadphaser     collision.Broadphaser
 	DynamicEntities []scene.Entity
 	StaticEntities  []scene.Entity
-	SpatialHash     geo.SpatialHash
 	closePairs      []geo.PairKey
 	lastUpdatedAt   time.Time
+	startTime       time.Time
+	statefulMessage string
 }
 
 func NewGame(entities []scene.Entity, camera camera.Camera, dynamicObjectRadius float64) *Game {
@@ -49,15 +56,16 @@ func NewGame(entities []scene.Entity, camera camera.Camera, dynamicObjectRadius 
 		}
 	}
 
-	expectedCellCount := 3 * len(dynamicEntities)
-	expectedPairCount := expectedCellCount * expectedCellCount
+	bvh := geo.BVH{}
+	// noBroadphase := collision.NewNoBroadphase()
+	// spatialHash := geo.NewSpatialHash(dynamicObjectRadius*40, len(dynamicEntities), 10 * len(dynamicEntities))
 
 	return &Game{
 		DynamicEntities: dynamicEntities,
 		StaticEntities:  staticEntities,
 		Renderer:        *scene.NewRenderer(),
 		Cam:             camera,
-		SpatialHash:     *geo.NewSpatialHash(dynamicObjectRadius*2000, expectedCellCount, expectedPairCount),
+		Broadphaser:     &bvh,
 	}
 }
 
@@ -66,42 +74,51 @@ func (g *Game) Update() error {
 		return errors.New("Until next time")
 	}
 
-	frameCount++
-	if frameCount == 60 {
-		pprof.StopCPUProfile()
-		cpuProf.Close()
-	}
-
 	if g.lastUpdatedAt.IsZero() {
-		g.lastUpdatedAt = time.Now()
+		g.startTime = time.Now()
+		g.lastUpdatedAt = g.startTime
+		if enableProfiling {
+			g.statefulMessage = "Profiling..."
+			cpuProf, _ := os.Create("cpu.prof")
+			pprof.StartCPUProfile(cpuProf)
+		}
 		return nil
 	}
 
+	if enableProfiling && time.Since(g.startTime) >= 10*time.Second {
+		pprof.StopCPUProfile()
+		cpuProf.Close()
+		g.statefulMessage = "Profiling... Done!"
+	}
+
 	now := time.Now()
-	dt := now.Sub(g.lastUpdatedAt).Seconds() / 10
+	dt := now.Sub(g.lastUpdatedAt).Seconds() * gravityScale
 	g.lastUpdatedAt = now
 
-	// collisions with dynamic objects
-	g.SpatialHash.Clear()
+	// collisions with dynamic objects - build
+	g.Broadphaser.Clear()
 	for i := range g.DynamicEntities {
 		if !g.DynamicEntities[i].GetRigidBody().IsStatic() {
 			transform := *g.DynamicEntities[i].GetTransform()
-			g.SpatialHash.Insert(i, g.DynamicEntities[i].GetCollider().AABB(transform))
+			aabb := g.DynamicEntities[i].GetCollider().AABB(transform)
+			g.Broadphaser.Insert(i, aabb)
 		}
 	}
 
-	g.closePairs = g.SpatialHash.CandidatePairs(g.closePairs)
+	// collisions with dynamic objects - find & process
+	g.closePairs = g.Broadphaser.CandidatePairs(g.closePairs)
 	for _, p := range g.closePairs {
-		if info, ok := physics.DetectCollision(g.DynamicEntities[p.A], g.DynamicEntities[p.B]); ok {
-			physics.ResolveCollision(g.DynamicEntities[p.A], g.DynamicEntities[p.B], info)
+		a, b := p.A(), p.B()
+		if info, ok := collision.Detect(g.DynamicEntities[a], g.DynamicEntities[b]); ok {
+			collision.Resolve(g.DynamicEntities[a], g.DynamicEntities[b], info)
 		}
 	}
 
 	// collisions with static objects
 	for d := range g.DynamicEntities {
 		for s := range g.StaticEntities {
-			if info, ok := physics.DetectCollision(g.DynamicEntities[d], g.StaticEntities[s]); ok {
-				physics.ResolveCollision(g.DynamicEntities[d], g.StaticEntities[s], info)
+			if info, ok := collision.Detect(g.DynamicEntities[d], g.StaticEntities[s]); ok {
+				collision.Resolve(g.DynamicEntities[d], g.StaticEntities[s], info)
 			}
 		}
 	}
@@ -113,7 +130,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.1f\nFPS: %.1f", ebiten.ActualTPS(), ebiten.ActualFPS()))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.1f\nFPS: %.1f\n%s", ebiten.ActualTPS(), ebiten.ActualFPS(), g.statefulMessage))
 	g.Renderer.Begin()
 	for i := range g.StaticEntities {
 		g.StaticEntities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
@@ -152,8 +169,6 @@ func main() {
 	// go func() {
 	// 	http.ListenAndServe("localhost:6060", nil)
 	// }()
-	cpuProf, _ := os.Create("cpu.prof")
-	pprof.StartCPUProfile(cpuProf)
 
 	// establish repeatable randomness
 	var seedStr string
@@ -204,8 +219,8 @@ func main() {
 	entities := []scene.Entity{&floor, &leftWall}
 
 	maxBallRadius := 0.0
-	for range 1000 {
-		radius := rng.Float64()*.2 + 0.5
+	for range numBalls {
+		radius := rng.Float64()*(avgBallSize*maxBallVariance) + avgBallSize
 		if radius > maxBallRadius {
 			maxBallRadius = radius
 		}
