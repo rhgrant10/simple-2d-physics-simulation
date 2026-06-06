@@ -1,16 +1,11 @@
 package geo
 
-import "math"
+import (
+	"math"
+	"slices"
+)
 
 type cellKey struct{ x, y int }
-type PairKey struct{ A, B int }
-
-func makePair(i, j int) PairKey {
-	if i < j {
-		return PairKey{i, j}
-	}
-	return PairKey{j, i}
-}
 
 type SpatialHash struct {
 	cellSize    float64
@@ -48,20 +43,35 @@ func (sh *SpatialHash) Insert(i int, aabb AABB) {
 
 // CandidatePairs returns all pairs (i,j) that share at least one cell.
 // The returned slice is reused across calls – copy it if you need to keep it.
+//
+//	func (sh *SpatialHash) CandidatePairs(out []PairKey) []PairKey {
+//		out = out[:0]
+//		for _, occupants := range sh.cells {
+//			// All occupants of the same cell are candidate pairs.
+//			for a := 0; a < len(occupants)-1; a++ {
+//				for b := a + 1; b < len(occupants); b++ {
+//					pk := makePair(occupants[a], occupants[b])
+//					if _, seen := sh.pairSet[pk]; !seen {
+//						sh.pairSet[pk] = struct{}{}
+//						out = append(out, pk)
+//					}
+//				}
+//			}
+//		}
+//		return out
+//	}
 func (sh *SpatialHash) CandidatePairs(out []PairKey) []PairKey {
 	out = out[:0]
 	for _, occupants := range sh.cells {
-		// All occupants of the same cell are candidate pairs.
 		for a := 0; a < len(occupants)-1; a++ {
 			for b := a + 1; b < len(occupants); b++ {
-				pk := makePair(occupants[a], occupants[b])
-				if _, seen := sh.pairSet[pk]; !seen {
-					sh.pairSet[pk] = struct{}{}
-					out = append(out, pk)
-				}
+				out = append(out, MakePair(occupants[a], occupants[b]))
 			}
 		}
 	}
+	// Sort and deduplicate in-place
+	slices.Sort(out)
+	out = slices.Compact(out)
 	return out
 }
 
@@ -71,7 +81,7 @@ func (sh *SpatialHash) Clear() {
 	for k, s := range sh.cells {
 		sh.cells[k] = s[:0] // keep backing array, zero length
 	}
-	for k := range sh.pairSet {
-		delete(sh.pairSet, k)
-	}
+	// for k := range sh.pairSet {
+	// 	delete(sh.pairSet, k)
+	// }
 }
