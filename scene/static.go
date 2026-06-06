@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"github.com/rhgrant10/sim/camera"
+	"github.com/rhgrant10/sim/collision"
 	"github.com/rhgrant10/sim/geo"
 	"github.com/rhgrant10/sim/physics"
 )
@@ -14,7 +15,7 @@ type Box struct {
 	Width     float64
 	Height    float64
 	Color     color.RGBA
-	Collider  physics.BoxCollider
+	Collider  collision.BoxCollider
 	Brush     BoxBrush
 }
 
@@ -32,11 +33,11 @@ func NewBox(
 		Width:     width,
 		Height:    height,
 		Color:     color,
-		Collider:  physics.BoxCollider{HalfW: width / 2, HalfH: height / 2},
+		Collider:  collision.BoxCollider{HalfW: width / 2, HalfH: height / 2},
 	}
 }
 
-func (b *Box) GetCollider() physics.Collider {
+func (b *Box) GetCollider() collision.Collider {
 	return &b.Collider
 }
 

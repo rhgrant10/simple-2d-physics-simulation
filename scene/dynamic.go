@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/rhgrant10/sim/camera"
+	"github.com/rhgrant10/sim/collision"
 	"github.com/rhgrant10/sim/geo"
 	"github.com/rhgrant10/sim/physics"
 )
@@ -14,7 +15,7 @@ type Ball struct {
 	RigidBody physics.RigidBody
 	Radius    float64
 	Color     color.RGBA
-	Collider  physics.CircleCollider
+	Collider  collision.CircleCollider
 	Brush     CircleBrush
 }
 
@@ -34,11 +35,11 @@ func NewBall(
 		RigidBody: physics.RigidBody{Velocity: vel, Mass: mass, Restitution: restitution, Friction: float64(friction)},
 		Radius:    radius,
 		Color:     color,
-		Collider:  physics.CircleCollider{Radius: radius},
+		Collider:  collision.CircleCollider{Radius: radius},
 	}
 }
 
-func (b *Ball) GetCollider() physics.Collider {
+func (b *Ball) GetCollider() collision.Collider {
 	return &b.Collider
 }
 

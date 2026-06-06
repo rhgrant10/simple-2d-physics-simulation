@@ -1,10 +1,11 @@
-package physics
+package collision
 
 import (
 	"math"
 	"testing"
 
 	"github.com/rhgrant10/sim/geo"
+	"github.com/rhgrant10/sim/physics"
 )
 
 const eps = 1e-9
@@ -12,17 +13,17 @@ const eps = 1e-9
 // testBody is a minimal Collidable for use in collision tests.
 type testBody struct {
 	transform geo.Transform
-	rigidBody RigidBody
+	rigidBody physics.RigidBody
 }
 
-func (tb *testBody) GetCollider() Collider        { return nil }
-func (tb *testBody) GetTransform() *geo.Transform { return &tb.transform }
-func (tb *testBody) GetRigidBody() *RigidBody     { return &tb.rigidBody }
+func (tb *testBody) GetCollider() Collider            { return nil }
+func (tb *testBody) GetTransform() *geo.Transform     { return &tb.transform }
+func (tb *testBody) GetRigidBody() *physics.RigidBody { return &tb.rigidBody }
 
 func makeBody(px, py, vx, vy, mass, restitution float64) *testBody {
 	return &testBody{
 		transform: geo.Transform{Pos: geo.Vec2{X: px, Y: py}},
-		rigidBody: RigidBody{Velocity: geo.Vec2{X: vx, Y: vy}, Mass: mass, Restitution: restitution},
+		rigidBody: physics.RigidBody{Velocity: geo.Vec2{X: vx, Y: vy}, Mass: mass, Restitution: restitution},
 	}
 }
 
@@ -33,7 +34,7 @@ func TestResolveCollision_Separating(t *testing.T) {
 	b := makeBody(-1, 0, -2, 0, 1, 1)
 	va0, vb0 := a.rigidBody.Velocity, b.rigidBody.Velocity
 
-	ResolveCollision(a, b, CollisionInfo{Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
+	Resolve(a, b, CollisionInfo{Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
 
 	if a.rigidBody.Velocity != va0 || b.rigidBody.Velocity != vb0 {
 		t.Errorf("separating bodies were modified: va=%v vb=%v; want %v %v",
@@ -61,7 +62,7 @@ func TestResolveCollision_MomentumConserved(t *testing.T) {
 			pBefore := tc.a.rigidBody.Velocity.Scale(ma).Add(tc.b.rigidBody.Velocity.Scale(mb))
 			info := CollisionInfo{Normal: tc.a.transform.Pos.Sub(tc.b.transform.Pos).Normalized(), Depth: 0.1}
 
-			ResolveCollision(tc.a, tc.b, info)
+			Resolve(tc.a, tc.b, info)
 
 			pAfter := tc.a.rigidBody.Velocity.Scale(ma).Add(tc.b.rigidBody.Velocity.Scale(mb))
 
@@ -91,7 +92,7 @@ func TestResolveCollision_Restitution(t *testing.T) {
 			e := (tc.a.rigidBody.Restitution + tc.b.rigidBody.Restitution) / 2
 			relBefore := tc.a.rigidBody.Velocity.Sub(tc.b.rigidBody.Velocity).Dot(n)
 
-			ResolveCollision(tc.a, tc.b, CollisionInfo{Normal: n, Depth: 0.1})
+			Resolve(tc.a, tc.b, CollisionInfo{Normal: n, Depth: 0.1})
 
 			relAfter := tc.a.rigidBody.Velocity.Sub(tc.b.rigidBody.Velocity).Dot(n)
 			want := -e * relBefore
@@ -111,7 +112,7 @@ func TestResolveCollision_ImpulseAlongNormal(t *testing.T) {
 	b := makeBody(0, -1, 2, 4, 1, 1)
 	vax0, vbx0 := a.rigidBody.Velocity.X, b.rigidBody.Velocity.X
 
-	ResolveCollision(a, b, CollisionInfo{Normal: geo.Vec2{X: 0, Y: 1}, Depth: 0.1})
+	Resolve(a, b, CollisionInfo{Normal: geo.Vec2{X: 0, Y: 1}, Depth: 0.1})
 
 	if math.Abs(a.rigidBody.Velocity.X-vax0) > eps {
 		t.Errorf("a tangential velocity changed: got %v; want %v", a.rigidBody.Velocity.X, vax0)
@@ -128,7 +129,7 @@ func TestResolveCollision_StaticBody(t *testing.T) {
 	b := makeBody(-1, 0, 0, 0, 0, 1) // mass=0 → static
 	vb0 := b.rigidBody.Velocity
 
-	ResolveCollision(a, b, CollisionInfo{Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
+	Resolve(a, b, CollisionInfo{Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
 
 	if b.rigidBody.Velocity != vb0 {
 		t.Errorf("static body velocity changed: got %v; want %v", b.rigidBody.Velocity, vb0)

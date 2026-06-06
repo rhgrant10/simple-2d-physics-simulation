@@ -1,15 +1,16 @@
-package physics
+package collision
 
 import (
 	"math"
 
 	"github.com/rhgrant10/sim/geo"
+	"github.com/rhgrant10/sim/physics"
 )
 
 type Collidable interface {
 	GetCollider() Collider
 	GetTransform() *geo.Transform
-	GetRigidBody() *RigidBody
+	GetRigidBody() *physics.RigidBody
 }
 
 type CollisionInfo struct {
@@ -58,7 +59,7 @@ func gjk(a, b Collidable) (Simplex, bool) {
 	}
 }
 
-func DetectCollision(a, b Collidable) (CollisionInfo, bool) {
+func Detect(a, b Collidable) (CollisionInfo, bool) {
 	simplex, ok := gjk(a, b)
 	if !ok {
 		return CollisionInfo{}, false
@@ -75,7 +76,7 @@ func DetectCollision(a, b Collidable) (CollisionInfo, bool) {
 	return CollisionInfo{Normal: info.Normal.Negated(), Depth: info.Depth}, true
 }
 
-func ResolveCollision(a, b Collidable, info CollisionInfo) {
+func Resolve(a, b Collidable, info CollisionInfo) {
 	n := info.Normal
 	inverseMassSum := a.GetRigidBody().InverseMass() + b.GetRigidBody().InverseMass()
 

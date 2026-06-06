@@ -1,10 +1,11 @@
-package physics
+package collision
 
 import (
 	"math"
 	"testing"
 
 	"github.com/rhgrant10/sim/geo"
+	"github.com/rhgrant10/sim/physics"
 )
 
 // dcEps is a looser tolerance for DetectCollision tests: EPA approximates
@@ -14,12 +15,12 @@ const dcEps = 1e-3
 type circleBody struct {
 	transform geo.Transform
 	collider  CircleCollider
-	rigidBody RigidBody
+	rigidBody physics.RigidBody
 }
 
-func (c *circleBody) GetCollider() Collider        { return &c.collider }
-func (c *circleBody) GetTransform() *geo.Transform { return &c.transform }
-func (c *circleBody) GetRigidBody() *RigidBody     { return &c.rigidBody }
+func (c *circleBody) GetCollider() Collider            { return &c.collider }
+func (c *circleBody) GetTransform() *geo.Transform     { return &c.transform }
+func (c *circleBody) GetRigidBody() *physics.RigidBody { return &c.rigidBody }
 
 func makeCircleBody(px, py, radius float64) *circleBody {
 	return &circleBody{
@@ -33,7 +34,7 @@ func TestDetectCollision_NoOverlap(t *testing.T) {
 	a := makeCircleBody(5, 0, 1)
 	b := makeCircleBody(-5, 0, 1)
 
-	_, ok := DetectCollision(a, b)
+	_, ok := Detect(a, b)
 
 	if ok {
 		t.Error("expected no collision, got one")
@@ -49,7 +50,7 @@ func TestDetectCollision_YAxis(t *testing.T) {
 	a := makeCircleBody(0, 0.7, 1)
 	b := makeCircleBody(0, -0.7, 1)
 
-	info, ok := DetectCollision(a, b)
+	info, ok := Detect(a, b)
 
 	if !ok {
 		t.Fatal("expected collision, got none")
@@ -67,8 +68,8 @@ func TestDetectCollision_Symmetry(t *testing.T) {
 	a := makeCircleBody(0, 0.7, 1)
 	b := makeCircleBody(0, -0.7, 1)
 
-	ab, okAB := DetectCollision(a, b)
-	ba, okBA := DetectCollision(b, a)
+	ab, okAB := Detect(a, b)
+	ba, okBA := Detect(b, a)
 
 	if !okAB || !okBA {
 		t.Fatal("expected both to detect collision")
