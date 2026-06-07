@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/rhgrant10/sim/camera"
 )
 
 type Renderer struct {
@@ -33,6 +34,14 @@ func NewRenderer() *Renderer {
 	r.Indices = make([]uint16, 0, 7500)
 
 	return r
+}
+
+func (r *Renderer) Render(screen *ebiten.Image, camera *camera.Camera, entities []Entity) {
+	r.Begin()
+	for i := range entities {
+		entities[i].GetBrush(camera).AppendVertices(&r.Vertices, &r.Indices)
+	}
+	r.Flush(screen)
 }
 
 func (r *Renderer) Begin() {

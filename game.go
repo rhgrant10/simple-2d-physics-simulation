@@ -124,14 +124,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.1f\nFPS: %.1f\n%s", ebiten.ActualTPS(), ebiten.ActualFPS(), g.statefulMessage))
-	g.Renderer.Begin()
-	for i := range g.DynamicEntities {
-		g.DynamicEntities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
-	}
-	for i := range g.StaticEntities {
-		g.StaticEntities[i].GetBrush(&g.Cam).AppendVertices(&g.Renderer.Vertices, &g.Renderer.Indices)
-	}
-	g.Renderer.Flush(screen)
+	g.Renderer.Render(screen, &g.Cam, append(g.DynamicEntities, g.StaticEntities...))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
