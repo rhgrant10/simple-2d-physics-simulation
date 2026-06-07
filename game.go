@@ -19,7 +19,7 @@ import (
 type Game struct {
 	Renderer        scene.Renderer
 	Cam             camera.Camera
-	Broadphaser     collision.Broadphaser
+	CollisionSolver collision.Solver
 	DynamicEntities []scene.Entity
 	StaticEntities  []scene.Entity
 	closePairs      []geo.PairKey
@@ -38,15 +38,18 @@ func NewGame(entities []scene.Entity, camera camera.Camera, dynamicObjectRadius 
 			dynamicEntities = append(dynamicEntities, entities[i])
 		}
 	}
-	bvh := geo.NewBVH()
-	// noBroadphase := collision.NewNoBroadphase()
-	// spatialHash := geo.NewSpatialHash(dynamicObjectRadius*40, len(dynamicEntities), 10 * len(dynamicEntities))
+	broad := geo.NewBVH()
+	narrow := collision.GJK{}
+	detector := collision.NewDefaultDetector(&broad, &narrow)
+	resolver := collision.NewImpulseResolver()
+	solver := collision.NewSolver(&detector, resolver)
+
 	return &Game{
 		StaticEntities:  staticEntities,
 		DynamicEntities: dynamicEntities,
+		CollisionSolver: solver,
 		Renderer:        *scene.NewRenderer(),
 		Cam:             camera,
-		Broadphaser:     &bvh,
 	}
 }
 
@@ -76,39 +79,14 @@ func (g *Game) Update() error {
 	dt := now.Sub(g.lastUpdatedAt).Seconds() * timeScale
 	g.lastUpdatedAt = now
 
-	// collisions with dynamic objects - build
-	bvs := make([]geo.AABB, 0, len(g.DynamicEntities))
+	collidables := make([]collision.Collidable, 0, len(g.DynamicEntities)+len(g.StaticEntities))
 	for i := range g.DynamicEntities {
-		if !g.DynamicEntities[i].GetRigidBody().IsStatic() {
-			transform := *g.DynamicEntities[i].GetTransform()
-			aabb := g.DynamicEntities[i].GetCollider().AABB(transform)
-			bvs = append(bvs, aabb)
-		}
+		collidables = append(collidables, g.DynamicEntities[i])
 	}
-	for range 1 {
-		g.Broadphaser.Clear()
-		g.Broadphaser.Build(&bvs)
-
-		// collisions with dynamic objects - find & process
-		g.closePairs = g.Broadphaser.CandidatePairs(g.closePairs)
-		collisionCount := 0
-		for _, p := range g.closePairs {
-			a, b := p.A(), p.B()
-			if info, ok := collision.Detect(g.DynamicEntities[a], g.DynamicEntities[b]); ok {
-				collisionCount++
-				collision.Resolve(g.DynamicEntities[a], g.DynamicEntities[b], info)
-			}
-		}
-
-		// collisions with static objects
-		for d := range g.DynamicEntities {
-			for s := range g.StaticEntities {
-				if info, ok := collision.Detect(g.DynamicEntities[d], g.StaticEntities[s]); ok {
-					collision.Resolve(g.DynamicEntities[d], g.StaticEntities[s], info)
-				}
-			}
-		}
+	for i := range g.StaticEntities {
+		collidables = append(collidables, g.StaticEntities[i])
 	}
+	g.CollisionSolver.Solve(collidables)
 
 	physicsHz := 120.0
 	maxDt := 1 / physicsHz

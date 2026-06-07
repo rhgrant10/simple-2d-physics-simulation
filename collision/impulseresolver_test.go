@@ -34,7 +34,8 @@ func TestResolveCollision_Separating(t *testing.T) {
 	b := makeBody(-1, 0, -2, 0, 1, 1)
 	va0, vb0 := a.rigidBody.Velocity, b.rigidBody.Velocity
 
-	Resolve(a, b, CollisionInfo{Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
+	resolver := NewImpulseResolver()
+	resolver.Resolve(CollisionInfo{A: a, B: b, Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
 
 	if a.rigidBody.Velocity != va0 || b.rigidBody.Velocity != vb0 {
 		t.Errorf("separating bodies were modified: va=%v vb=%v; want %v %v",
@@ -60,9 +61,10 @@ func TestResolveCollision_MomentumConserved(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ma, mb := tc.a.rigidBody.Mass, tc.b.rigidBody.Mass
 			pBefore := tc.a.rigidBody.Velocity.Scale(ma).Add(tc.b.rigidBody.Velocity.Scale(mb))
-			info := CollisionInfo{Normal: tc.a.transform.Pos.Sub(tc.b.transform.Pos).Normalized(), Depth: 0.1}
+			info := CollisionInfo{A: tc.a, B: tc.b, Normal: tc.a.transform.Pos.Sub(tc.b.transform.Pos).Normalized(), Depth: 0.1}
 
-			Resolve(tc.a, tc.b, info)
+			resolver := NewImpulseResolver()
+			resolver.Resolve(info)
 
 			pAfter := tc.a.rigidBody.Velocity.Scale(ma).Add(tc.b.rigidBody.Velocity.Scale(mb))
 
@@ -92,7 +94,8 @@ func TestResolveCollision_Restitution(t *testing.T) {
 			e := (tc.a.rigidBody.Restitution + tc.b.rigidBody.Restitution) / 2
 			relBefore := tc.a.rigidBody.Velocity.Sub(tc.b.rigidBody.Velocity).Dot(n)
 
-			Resolve(tc.a, tc.b, CollisionInfo{Normal: n, Depth: 0.1})
+			resolver := NewImpulseResolver()
+			resolver.Resolve(CollisionInfo{A: tc.a, B: tc.b, Normal: n, Depth: 0.1})
 
 			relAfter := tc.a.rigidBody.Velocity.Sub(tc.b.rigidBody.Velocity).Dot(n)
 			want := -e * relBefore
@@ -112,7 +115,8 @@ func TestResolveCollision_ImpulseAlongNormal(t *testing.T) {
 	b := makeBody(0, -1, 2, 4, 1, 1)
 	vax0, vbx0 := a.rigidBody.Velocity.X, b.rigidBody.Velocity.X
 
-	Resolve(a, b, CollisionInfo{Normal: geo.Vec2{X: 0, Y: 1}, Depth: 0.1})
+	resolver := NewImpulseResolver()
+	resolver.Resolve(CollisionInfo{A: a, B: b, Normal: geo.Vec2{X: 0, Y: 1}, Depth: 0.1})
 
 	if math.Abs(a.rigidBody.Velocity.X-vax0) > eps {
 		t.Errorf("a tangential velocity changed: got %v; want %v", a.rigidBody.Velocity.X, vax0)
@@ -129,7 +133,8 @@ func TestResolveCollision_StaticBody(t *testing.T) {
 	b := makeBody(-1, 0, 0, 0, 0, 1) // mass=0 → static
 	vb0 := b.rigidBody.Velocity
 
-	Resolve(a, b, CollisionInfo{Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
+	resolver := NewImpulseResolver()
+	resolver.Resolve(CollisionInfo{A: a, B: b, Normal: geo.Vec2{X: 1, Y: 0}, Depth: 0.1})
 
 	if b.rigidBody.Velocity != vb0 {
 		t.Errorf("static body velocity changed: got %v; want %v", b.rigidBody.Velocity, vb0)
