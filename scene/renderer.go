@@ -37,19 +37,19 @@ func NewRenderer() *Renderer {
 }
 
 func (r *Renderer) Render(screen *ebiten.Image, camera *camera.Camera, entities []Entity) {
-	r.Begin()
+	r.begin()
 	for i := range entities {
 		entities[i].GetBrush(camera).AppendVertices(&r.Vertices, &r.Indices)
 	}
-	r.Flush(screen)
+	r.flush(screen)
 }
 
-func (r *Renderer) Begin() {
+func (r *Renderer) begin() {
 	r.Vertices = r.Vertices[:0]
 	r.Indices = r.Indices[:0]
 }
 
-func (r *Renderer) Flush(screen *ebiten.Image) {
+func (r *Renderer) flush(screen *ebiten.Image) {
 	if len(r.Vertices) == 0 {
 		return
 	}
