@@ -12,6 +12,13 @@ func NewAABB(p1, p2 Vec2) AABB {
 	return AABB{Min: p2, Max: p1}
 }
 
+func (a *AABB) Center() Vec2 {
+	return Vec2{
+		X: (a.Min.X + a.Max.X) / 2,
+		Y: (a.Min.Y + a.Max.Y) / 2,
+	}
+}
+
 func (a *AABB) Left() float64 {
 	return a.Min.X
 }

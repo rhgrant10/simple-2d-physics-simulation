@@ -3,7 +3,7 @@ package collision
 import "github.com/rhgrant10/sim/geo"
 
 type Broadphaser interface {
-	Insert(i int, aabb geo.AABB)
+	Build(bvs *[]geo.AABB)
 	CandidatePairs(out []geo.PairKey) []geo.PairKey
 	Clear()
 }
@@ -16,8 +16,10 @@ func NewNoBroadphase() NoBroadphase {
 	return NoBroadphase{indices: make(map[int]struct{})}
 }
 
-func (b *NoBroadphase) Insert(i int, aabb geo.AABB) {
-	b.indices[i] = struct{}{}
+func (b *NoBroadphase) Build(bvs *[]geo.AABB) {
+	for i := range *bvs {
+		b.indices[i] = struct{}{}
+	}
 }
 
 func (b *NoBroadphase) CandidatePairs(out []geo.PairKey) []geo.PairKey {

@@ -27,7 +27,13 @@ func (sh *SpatialHash) componentToCell(v float64) int {
 	return int(math.Floor(v * sh.invCellSize))
 }
 
-func (sh *SpatialHash) Insert(i int, aabb AABB) {
+func (sh *SpatialHash) Build(bvs *[]AABB) {
+	for i, aabb := range *bvs {
+		sh.insert(i, aabb)
+	}
+}
+
+func (sh *SpatialHash) insert(i int, aabb AABB) {
 	x0 := sh.componentToCell(aabb.Min.X)
 	x1 := sh.componentToCell(aabb.Min.Y)
 	y0 := sh.componentToCell(aabb.Max.X)

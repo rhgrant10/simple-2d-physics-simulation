@@ -116,11 +116,13 @@ func Resolve(a, b Collidable, info CollisionInfo) {
 
 	// Positional correction: push overlapping bodies apart to prevent sinking.
 	if inverseMassSum > 0 {
-		const percent = 0.4
-		const slop = 0.01
-		corrMag := math.Max(info.Depth-slop, 0) / inverseMassSum * percent
-		corr := n.Scale(corrMag)
-		a.GetTransform().Pos = a.GetTransform().Pos.Add(corr.Scale(a.GetRigidBody().InverseMass()))
-		b.GetTransform().Pos = b.GetTransform().Pos.Sub(corr.Scale(b.GetRigidBody().InverseMass()))
+		for range 1 {
+			const percent = 0.4
+			const slop = 0.01
+			corrMag := math.Max(info.Depth-slop, 0) / inverseMassSum * percent
+			corr := n.Scale(corrMag)
+			a.GetTransform().Pos = a.GetTransform().Pos.Add(corr.Scale(a.GetRigidBody().InverseMass()))
+			b.GetTransform().Pos = b.GetTransform().Pos.Sub(corr.Scale(b.GetRigidBody().InverseMass()))
+		}
 	}
 }
