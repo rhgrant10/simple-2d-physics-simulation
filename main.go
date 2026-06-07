@@ -22,7 +22,7 @@ var (
 	avgBallSize     float64  = .25
 	cameraZoom               = 1.0
 	cpuProf         *os.File = nil
-	enableProfiling          = true
+	enableProfiling          = false
 	maxBallVariance          = 0.1
 	numBalls                 = 8000
 	timeScale                = 0.50
