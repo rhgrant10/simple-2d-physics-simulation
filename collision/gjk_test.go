@@ -107,7 +107,7 @@ func TestDetectCollision_NoOverlap(t *testing.T) {
 	b := makeCircleBody(-5, 0, 1)
 
 	narrow := GJK{}
-	_, ok := narrow.Detect(a, b)
+	_, ok := narrow.Check(a, b)
 	if ok {
 		t.Error("expected no collision, got one")
 	}
@@ -123,7 +123,7 @@ func TestDetectCollision_YAxis(t *testing.T) {
 	b := makeCircleBody(0, -0.7, 1)
 
 	narrow := GJK{}
-	info, ok := narrow.Detect(a, b)
+	info, ok := narrow.Check(a, b)
 
 	if !ok {
 		t.Fatal("expected collision, got none")
@@ -142,8 +142,8 @@ func TestDetectCollision_Symmetry(t *testing.T) {
 	b := makeCircleBody(0, -0.7, 1)
 
 	narrow := GJK{}
-	ab, okAB := narrow.Detect(a, b)
-	ba, okBA := narrow.Detect(b, a)
+	ab, okAB := narrow.Check(a, b)
+	ba, okBA := narrow.Check(b, a)
 
 	if !okAB || !okBA {
 		t.Fatal("expected both to detect collision")

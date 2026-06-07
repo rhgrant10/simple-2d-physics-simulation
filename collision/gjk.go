@@ -7,7 +7,7 @@ const epaTolerance = 1e-6
 type GJK struct {
 }
 
-func (d *GJK) Detect(a, b Collidable) (info CollisionInfo, areColliding bool) {
+func (d *GJK) Check(a, b Collidable) (info CollisionInfo, areColliding bool) {
 	simplex, areColliding := gjk(a, b)
 	if areColliding {
 		// calculate penetration details

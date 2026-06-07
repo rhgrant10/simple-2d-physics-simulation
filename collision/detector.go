@@ -45,7 +45,7 @@ func (h *DefaultDetector) Detect(entities []Collidable) []CollisionInfo {
 	h.closePairs = h.broad.CandidatePairs(h.closePairs)
 	for _, p := range h.closePairs {
 		a, b := p.A(), p.B()
-		if info, ok := h.narrow.Detect(dynamicEntities[a], dynamicEntities[b]); ok {
+		if info, areColliding := h.narrow.Check(dynamicEntities[a], dynamicEntities[b]); areColliding {
 			collisions = append(collisions, info)
 		}
 	}
@@ -53,7 +53,7 @@ func (h *DefaultDetector) Detect(entities []Collidable) []CollisionInfo {
 	// collisions with static objects
 	for d := range dynamicEntities {
 		for s := range staticEntities {
-			if info, ok := h.narrow.Detect(dynamicEntities[d], staticEntities[s]); ok {
+			if info, areColliding := h.narrow.Check(dynamicEntities[d], staticEntities[s]); areColliding {
 				collisions = append(collisions, info)
 			}
 		}
