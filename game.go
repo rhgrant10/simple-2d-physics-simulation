@@ -69,7 +69,7 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	if enableProfiling && time.Since(g.startTime) >= 10*time.Second {
+	if enableProfiling && time.Since(g.startTime) >= profilingDuration {
 		pprof.StopCPUProfile()
 		cpuProf.Close()
 		g.statefulMessage = "Profiling... Done!"

@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	_ "net/http/pprof"
 	"os"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/rhgrant10/sim/camera"
@@ -19,13 +20,14 @@ import (
 )
 
 var (
-	avgBallSize     float64  = .25
-	cameraZoom               = 1.0
-	cpuProf         *os.File = nil
-	enableProfiling          = false
-	maxBallVariance          = 0.1
-	numBalls                 = 8000
-	timeScale                = 0.50
+	avgBallSize       float64  = .25
+	cameraZoom                 = 1.0
+	cpuProf           *os.File = nil
+	enableProfiling            = true
+	profilingDuration          = 10 * time.Second
+	maxBallVariance            = 0.1
+	numBalls                   = 8000
+	timeScale                  = 0.50
 )
 
 func generateRandomSeed() string {
