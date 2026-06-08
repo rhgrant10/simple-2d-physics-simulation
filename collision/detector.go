@@ -38,7 +38,7 @@ func (h *DefaultDetector) Detect(entities []Collidable) []CollisionInfo {
 	}
 
 	h.broad.Clear()
-	h.broad.Build(&bvs)
+	h.broad.Build(bvs)
 
 	// collisions with dynamic objects - find & process
 	collisions := []CollisionInfo{}

@@ -18,14 +18,17 @@ type BVH struct {
 }
 
 func NewBVH() BVH {
-	return BVH{leafs: make(map[int]*bvnode, 1)}
+	return BVH{leafs: make(map[int]*bvnode)}
 }
 
-func (b *BVH) Build(aabbs *[]AABB) {
-	leafs := make([]bvnode, 0, len(*aabbs))
+func (b *BVH) Build(aabbs []AABB) {
+	if aabbs == nil {
+		panic("Cannot build a BVH with nil set of AABBs")
+	}
+	leafs := make([]bvnode, 0, len(aabbs))
 	minX, minY := math.Inf(1), math.Inf(1)
 	maxX, maxY := math.Inf(-1), math.Inf(-1)
-	for i, aabb := range *aabbs {
+	for i, aabb := range aabbs {
 		minX = min(minX, aabb.Min.X)
 		minY = min(minY, aabb.Min.Y)
 		maxX = max(maxX, aabb.Max.X)
@@ -110,4 +113,7 @@ func (b *BVH) candidatePairsFor(i int) []PairKey {
 
 func (b *BVH) Clear() {
 	b.root = nil
+	for k := range b.leafs {
+		delete(b.leafs, k)
+	}
 }

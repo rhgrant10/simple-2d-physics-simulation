@@ -20,7 +20,7 @@ func bruteForceOverlaps(aabbs []AABB) map[PairKey]struct{} {
 
 func buildAndQuery(aabbs []AABB) []PairKey {
 	bvh := NewBVH()
-	bvh.Build(&aabbs)
+	bvh.Build(aabbs)
 	return bvh.CandidatePairs(nil)
 }
 
@@ -161,11 +161,10 @@ func TestBVHCompletenessRandom(t *testing.T) {
 	}
 }
 
-// TestBVHEmptyDoesNotPanic verifies that Build on an empty slice does not panic.
-func TestBVHEmptyDoesNotPanic(t *testing.T) {
+func TestBVHEmptyDoesPanics(t *testing.T) {
 	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("Build panicked on empty input: %v", r)
+		if r := recover(); r == nil {
+			t.Error("Build must panic on empty input, but didn't")
 		}
 	}()
 	buildAndQuery(nil)
