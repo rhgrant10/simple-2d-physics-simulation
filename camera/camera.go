@@ -5,11 +5,10 @@ import (
 )
 
 type Camera struct {
-	Pos       geo.Vec2
-	Width     float64
-	Height    float64
-	Scale     float64
-	Antialias bool
+	Pos    geo.Vec2
+	Width  float64
+	Height float64
+	Scale  float64
 }
 
 func (c Camera) ToWorldPoint(s geo.Vec2) geo.Vec2 {

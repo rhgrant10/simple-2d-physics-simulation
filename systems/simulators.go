@@ -1,6 +1,8 @@
 package systems
 
 import (
+	"time"
+
 	"github.com/rhgrant10/sim/world"
 )
 
@@ -13,11 +15,19 @@ type CollisionSolver interface {
 }
 
 type BasicSimulator struct {
-	Integrator Integrator
-	Solver     CollisionSolver
+	Integrator   Integrator
+	Solver       CollisionSolver
+	StepInterval time.Duration
+	dtRemainder  float64
 }
 
 func (s *BasicSimulator) Step(w *world.World, dt float64) {
 	s.Solver.Solve(w)
-	s.Integrator.Step(w, dt)
+	interval := s.StepInterval.Seconds()
+	dt += s.dtRemainder
+	for dt > 0 {
+		s.Integrator.Step(w, interval)
+		dt -= interval
+	}
+	s.dtRemainder = interval + dt
 }

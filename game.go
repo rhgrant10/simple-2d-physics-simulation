@@ -73,6 +73,7 @@ func DefaultGame(w world.World, c camera.Camera) *Game {
 			Detector: &detector,
 			Resolver: &resolver,
 		},
+		StepInterval: 1 * time.Second / 120.0,
 	}
 	profileConfig := DefaultProfilingConfig()
 	return NewGame(w, renderer, &simulation, c, profileConfig)

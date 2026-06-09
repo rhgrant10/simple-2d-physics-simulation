@@ -22,7 +22,7 @@ var (
 	avgBallSize     float64 = .25
 	cameraZoom              = 1.0
 	maxBallVariance         = 0.1
-	numBalls                = 1000
+	numBalls                = 4000
 )
 
 func main() {
@@ -44,14 +44,13 @@ func main() {
 	cameraWidth := float64(pixelWidth) * scale
 	cameraHeight := float64(pixelHeight) * scale
 	camera := camera.Camera{
-		Pos:       geo.Vec2{X: 0, Y: 0},
-		Width:     cameraWidth,
-		Height:    cameraHeight,
-		Scale:     50,
-		Antialias: true,
+		// Pos:    geo.Vec2{X: 0, Y: 0},
+		Width:  cameraWidth,
+		Height: cameraHeight,
+		Scale:  50,
 	}
 	// align the bottom of the screen with world Y=0, then zoom out
-	// camera.Pos.Y += (float64(-cameraHeight) / 2) / camera.Scale
+	camera.Pos.Y += (float64(-cameraHeight) / 2) / camera.Scale
 	camera.Scale /= 2
 	camera.Scale *= cameraZoom
 
