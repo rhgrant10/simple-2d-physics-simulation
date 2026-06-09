@@ -88,11 +88,13 @@ type circleBody struct {
 	transform geo.Transform
 	collider  CircleCollider
 	rigidBody physics.RigidBody
+	material  physics.Material
 }
 
 func (c *circleBody) GetCollider() Collider            { return &c.collider }
 func (c *circleBody) GetTransform() *geo.Transform     { return &c.transform }
 func (c *circleBody) GetRigidBody() *physics.RigidBody { return &c.rigidBody }
+func (c *circleBody) GetMaterial() *physics.Material   { return &c.material }
 
 func makeCircleBody(px, py, radius float64) *circleBody {
 	return &circleBody{

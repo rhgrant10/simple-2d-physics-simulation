@@ -13,6 +13,7 @@ type SparseSet[T any] struct {
 }
 
 func (s *SparseSet[T]) Lookup(id Entity) (component *T, ok bool) {
+	component = new(T)
 	if s.sparseShortage(id) > 0 {
 		return
 	}

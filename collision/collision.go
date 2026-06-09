@@ -9,6 +9,7 @@ type Collidable interface {
 	GetCollider() Collider
 	GetTransform() *geo.Transform
 	GetRigidBody() *physics.RigidBody
+	GetMaterial() *physics.Material
 }
 
 type CollisionInfo struct {

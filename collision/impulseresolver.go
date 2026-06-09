@@ -25,7 +25,7 @@ func (r ImpulseResolver) Resolve(info CollisionInfo) {
 	relVel := relVelVec.Dot(n)
 
 	if relVel < 0 {
-		restitution := (a.GetRigidBody().Restitution + b.GetRigidBody().Restitution) / 2
+		restitution := (a.GetMaterial().Restitution + b.GetMaterial().Restitution) / 2
 		if inverseMassSum > 0 {
 			// apply the collision impulse
 			j := -(1 + restitution) * relVel / inverseMassSum
@@ -39,7 +39,7 @@ func (r ImpulseResolver) Resolve(info CollisionInfo) {
 			if t.Magnitude() > 1e-6 {
 				t = t.Normalized()
 				relVelT := relVelVec.Dot(t)
-				mu := noSpinFactor * (a.GetRigidBody().Friction + b.GetRigidBody().Friction) / 2
+				mu := noSpinFactor * float64(a.GetMaterial().Friction+b.GetMaterial().Friction) / 2
 				jt := -relVelT / inverseMassSum
 				// Coulomb cone
 				if jt > mu*j {

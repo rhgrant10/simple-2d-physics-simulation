@@ -14,16 +14,19 @@ const eps = 1e-9
 type testBody struct {
 	transform geo.Transform
 	rigidBody physics.RigidBody
+	material  physics.Material
 }
 
 func (tb *testBody) GetCollider() Collider            { return nil }
 func (tb *testBody) GetTransform() *geo.Transform     { return &tb.transform }
 func (tb *testBody) GetRigidBody() *physics.RigidBody { return &tb.rigidBody }
+func (tb *testBody) GetMaterial() *physics.Material   { return &tb.material }
 
 func makeBody(px, py, vx, vy, mass, restitution float64) *testBody {
 	return &testBody{
 		transform: geo.Transform{Pos: geo.Vec2{X: px, Y: py}},
-		rigidBody: physics.RigidBody{Velocity: geo.Vec2{X: vx, Y: vy}, Mass: mass, Restitution: restitution},
+		rigidBody: physics.RigidBody{Velocity: geo.Vec2{X: vx, Y: vy}, Mass: mass},
+		material:  physics.Material{Restitution: restitution},
 	}
 }
 
@@ -91,7 +94,7 @@ func TestResolveCollision_Restitution(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			n := tc.a.transform.Pos.Sub(tc.b.transform.Pos).Normalized()
-			e := (tc.a.rigidBody.Restitution + tc.b.rigidBody.Restitution) / 2
+			e := (tc.a.material.Restitution + tc.b.material.Restitution) / 2
 			relBefore := tc.a.rigidBody.Velocity.Sub(tc.b.rigidBody.Velocity).Dot(n)
 
 			resolver := NewImpulseResolver()

@@ -22,8 +22,8 @@ func NewBVH() BVH {
 }
 
 func (b *BVH) Build(aabbs []AABB) {
-	if aabbs == nil {
-		panic("Cannot build a BVH with nil set of AABBs")
+	if len(aabbs) == 0 {
+		panic("Cannot build a BVH with empty set of AABBs")
 	}
 	leafs := make([]bvnode, 0, len(aabbs))
 	minX, minY := math.Inf(1), math.Inf(1)

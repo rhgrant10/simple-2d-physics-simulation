@@ -3,10 +3,8 @@ package physics
 import "github.com/rhgrant10/sim/geo"
 
 type RigidBody struct {
-	Velocity    geo.Vec2
-	Mass        float64
-	Restitution float64
-	Friction    float64
+	Velocity geo.Vec2
+	Mass     float64
 }
 
 func (rb *RigidBody) InverseMass() float64 {

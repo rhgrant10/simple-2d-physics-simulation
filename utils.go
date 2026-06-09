@@ -1,13 +1,25 @@
-package scene
+package main
 
 import (
+	crand "crypto/rand"
+	"crypto/sha256"
+	"encoding/binary"
+	"fmt"
 	"image/color"
 	"math"
 )
 
-// HSLToRGB converts HSL values to RGB.
-// h: 0–360, s: 0–1, l: 0–1
-// Returns r, g, b each in range 0–255.
+func generateRandomSeed() string {
+	b := make([]byte, 8)
+	crand.Read(b)
+	return fmt.Sprintf("%x", b)
+}
+
+func seedFromString(s string) int64 {
+	h := sha256.Sum256([]byte(s))
+	return int64(binary.BigEndian.Uint64(h[:8]))
+}
+
 func HSLToRGB(h, s, l float64) color.RGBA {
 	// Achromatic case
 	if s == 0 {
