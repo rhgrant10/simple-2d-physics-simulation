@@ -19,17 +19,20 @@ import (
 )
 
 type ProfilingConfig struct {
-	enabled  bool
-	filename string
-	duration time.Duration
-	file     *os.File
+	enabled     bool
+	cpuFilename string
+	cpuFile     *os.File
+	memFilename string
+	memFile     *os.File
+	duration    time.Duration
 }
 
 func DefaultProfilingConfig() ProfilingConfig {
 	return ProfilingConfig{
-		enabled:  true,
-		filename: "cpu.prof",
-		duration: 10 * time.Second,
+		enabled:     true,
+		cpuFilename: "cpu.prof",
+		memFilename: "mem.prof",
+		duration:    10 * time.Second,
 	}
 }
 
@@ -68,12 +71,12 @@ func DefaultGame(w world.World, c camera.Camera) *Game {
 	detector := collision.NewDefaultDetector(&bvh, &collision.GJK{})
 	resolver := collision.NewImpulseResolver()
 	simulation := systems.BasicSimulator{
-		Integrator: &systems.EulerianIntegrator{},
+		Integrator: &systems.VerletIntegrator{},
 		Solver: &systems.BasicCollisionSystem{
 			Detector: &detector,
 			Resolver: &resolver,
 		},
-		StepInterval: 1 * time.Second / 120.0,
+		// StepInterval: 1 * time.Second / 120.0,
 	}
 	profileConfig := DefaultProfilingConfig()
 	return NewGame(w, renderer, &simulation, c, profileConfig)
@@ -89,16 +92,19 @@ func (g *Game) Update() error {
 		g.lastUpdatedAt = g.startTime
 		if g.profiling.enabled {
 			g.statefulMessage = fmt.Sprintf("Profiling for %v...", g.profiling.duration)
-			f, _ := os.Create(g.profiling.filename)
-			g.profiling.file = f
-			pprof.StartCPUProfile(g.profiling.file)
+			f, _ := os.Create(g.profiling.cpuFilename)
+			g.profiling.cpuFile = f
+			pprof.StartCPUProfile(g.profiling.cpuFile)
 		}
 		return nil
 	}
 
 	if g.profiling.enabled && time.Since(g.startTime) >= g.profiling.duration {
 		pprof.StopCPUProfile()
-		g.profiling.file.Close()
+		g.profiling.cpuFile.Close()
+		g.profiling.memFile, _ = os.Create(g.profiling.memFilename)
+		pprof.WriteHeapProfile(g.profiling.memFile)
+		g.profiling.memFile.Close()
 		g.statefulMessage = "Profiling... Done!"
 	}
 

@@ -18,7 +18,9 @@ type Polytope struct {
 }
 
 func NewPolytope(s Simplex) Polytope {
-	return Polytope{vertices: []geo.Vec2{s.points[0], s.points[1], s.points[2]}}
+	vertices := make([]geo.Vec2, 0, 16) // pre-allocation for the insertions that follow
+	vertices = append(vertices, s.points[0], s.points[1], s.points[2])
+	return Polytope{vertices: vertices}
 }
 
 func (p *Polytope) Insert(index int, v geo.Vec2) {

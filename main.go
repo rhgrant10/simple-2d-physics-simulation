@@ -20,7 +20,7 @@ import (
 
 var (
 	avgBallSize     float64 = .25
-	cameraZoom              = 1.0
+	cameraZoom              = 0.8
 	maxBallVariance         = 0.1
 	numBalls                = 4000
 )
@@ -73,6 +73,13 @@ func main() {
 	world.AddComponent(w, leftWall, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
 	world.AddComponent(w, leftWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
 
+	rightWall := world.Spawn(w)
+	width, height = 10.0, 50.0
+	world.AddComponent(w, rightWall, geo.Transform{Pos: geo.Vec2{X: 5, Y: 10}})
+	world.AddComponent(w, rightWall, mesh.Rectangle{Width: width, Height: height, Color: containerColor})
+	world.AddComponent(w, rightWall, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
+	world.AddComponent(w, rightWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+
 	maxBallRadius := 0.0
 	for range numBalls {
 		radiusJitter := (rng.Float64() - 0.5) * maxBallVariance
@@ -85,7 +92,7 @@ func main() {
 		world.AddComponent(w, ball, geo.Transform{
 			Pos: geo.Vec2{
 				X: rng.Float64()*80 - 40 - 20,
-				Y: rng.Float64()*50 + 10,
+				Y: rng.Float64()*50 + 80,
 			}})
 		world.AddComponent(w, ball, physics.RigidBody{
 			Velocity: geo.Vec2FromPolar(

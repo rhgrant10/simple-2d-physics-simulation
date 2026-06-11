@@ -15,13 +15,23 @@ type CollisionSolver interface {
 }
 
 type BasicSimulator struct {
+	Integrator Integrator
+	Solver     CollisionSolver
+}
+
+func (s *BasicSimulator) Step(w *world.World, dt float64) {
+	s.Solver.Solve(w)
+	s.Integrator.Step(w, dt)
+}
+
+type StaticIntervalSimulator struct {
 	Integrator   Integrator
 	Solver       CollisionSolver
 	StepInterval time.Duration
 	dtRemainder  float64
 }
 
-func (s *BasicSimulator) Step(w *world.World, dt float64) {
+func (s *StaticIntervalSimulator) Step(w *world.World, dt float64) {
 	s.Solver.Solve(w)
 	interval := s.StepInterval.Seconds()
 	dt += s.dtRemainder
