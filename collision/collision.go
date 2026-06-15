@@ -13,8 +13,9 @@ type Collidable interface {
 }
 
 type CollisionInfo struct {
-	A      Collidable
-	B      Collidable
-	Normal geo.Vec2
-	Depth  float64
+	A                Collidable
+	B                Collidable
+	Normal           geo.Vec2
+	Depth            float64
+	RelativeVelocity geo.Vec2
 }

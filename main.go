@@ -19,10 +19,12 @@ import (
 )
 
 var (
-	avgBallSize     float64 = .25
+	avgBallSize     float64 = .3
 	cameraZoom              = 0.8
-	maxBallVariance         = 0.1
+	maxBallVariance         = 0.0
 	numBalls                = 4000
+	minBallDensity          = 80.0
+	maxBallDensity          = 100.0
 )
 
 func main() {
@@ -65,6 +67,7 @@ func main() {
 	world.AddComponent(w, floor, mesh.Rectangle{Width: 100, Height: 10, Color: containerColor})
 	world.AddComponent(w, floor, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
 	world.AddComponent(w, floor, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+	world.AddComponent(w, floor, physics.RigidBody{})
 
 	leftWall := world.Spawn(w)
 	width, height = 10.0, 50.0
@@ -72,13 +75,15 @@ func main() {
 	world.AddComponent(w, leftWall, mesh.Rectangle{Width: width, Height: height, Color: containerColor})
 	world.AddComponent(w, leftWall, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
 	world.AddComponent(w, leftWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+	world.AddComponent(w, leftWall, physics.RigidBody{})
 
 	rightWall := world.Spawn(w)
 	width, height = 10.0, 50.0
-	world.AddComponent(w, rightWall, geo.Transform{Pos: geo.Vec2{X: 5, Y: 10}})
+	world.AddComponent(w, rightWall, geo.Transform{Pos: geo.Vec2{X: 30, Y: 10}})
 	world.AddComponent(w, rightWall, mesh.Rectangle{Width: width, Height: height, Color: containerColor})
 	world.AddComponent(w, rightWall, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
 	world.AddComponent(w, rightWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+	world.AddComponent(w, rightWall, physics.RigidBody{})
 
 	maxBallRadius := 0.0
 	for range numBalls {
@@ -88,27 +93,29 @@ func main() {
 			maxBallRadius = radius
 		}
 		ball := world.Spawn(w)
-		density := rng.Float64()*0.1 + 20
+		densityAlpha := rng.Float64()*0.9 + 0.1
+		densityAlpha *= densityAlpha
+		density := densityAlpha*(maxBallDensity-minBallDensity) + minBallDensity
 		world.AddComponent(w, ball, geo.Transform{
 			Pos: geo.Vec2{
-				X: rng.Float64()*80 - 40 - 20,
-				Y: rng.Float64()*50 + 80,
+				X: rng.Float64()*60 - 30 - 20,
+				Y: rng.Float64()*50 + 40,
 			}})
 		world.AddComponent(w, ball, physics.RigidBody{
-			Velocity: geo.Vec2FromPolar(
-				rng.Float64()*20,
-				rng.Float64()*360,
-			),
+			// Velocity: geo.Vec2FromPolar(
+			// 	rng.Float64()*1,
+			// 	rng.Float64()*360,
+			// ),
 			Mass: density * math.Pi * radius * radius,
 		})
 		world.AddComponent(w, ball, mesh.Circle{Radius: radius, Color: HSLToRGB(
-			rng.Float64()*360,
-			0.2*float64(rng.Intn(4)+1),
-			rng.Float64()*0.5+0.5,
+			rng.Float64()*0,
+			0.5, //0.2*float64(rng.Intn(4)+1),
+			densityAlpha,
 		)})
 		world.AddComponent(w, ball, collision.Collider(&collision.CircleCollider{Radius: radius}))
 		world.AddComponent(w, ball, physics.Material{
-			Restitution: rng.Float64()*0.1 + 0.55,
+			Restitution: 0.0,
 			Friction:    physics.KineticFriction(rng.Float64()*0.2 + 0.1)})
 	}
 

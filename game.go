@@ -29,7 +29,7 @@ type ProfilingConfig struct {
 
 func DefaultProfilingConfig() ProfilingConfig {
 	return ProfilingConfig{
-		enabled:     true,
+		enabled:     false,
 		cpuFilename: "cpu.prof",
 		memFilename: "mem.prof",
 		duration:    10 * time.Second,
@@ -69,14 +69,19 @@ func DefaultGame(w world.World, c camera.Camera) *Game {
 	renderer := scene.NewBasicRenderer()
 	bvh := geo.NewBVH()
 	detector := collision.NewDefaultDetector(&bvh, &collision.GJK{})
-	resolver := collision.NewImpulseResolver()
-	simulation := systems.BasicSimulator{
-		Integrator: &systems.VerletIntegrator{},
-		Solver: &systems.BasicCollisionSystem{
-			Detector: &detector,
-			Resolver: &resolver,
-		},
-		// StepInterval: 1 * time.Second / 120.0,
+	// resolver := collision.NewImpulseResolver()
+	// simulation := systems.BasicSimulator{
+	// 	Integrator: &systems.VerletIntegrator{},
+	// 	Solver: &systems.BasicCollisionSystem{
+	// 		Detector: &detector,
+	// 		Resolver: &resolver,
+	// 	},
+	// }
+	simulation := systems.XPBDSimulator{
+		Detector:   &detector,
+		SubSteps:   1,
+		Iterations: 10,
+		Compliance: 0,
 	}
 	profileConfig := DefaultProfilingConfig()
 	return NewGame(w, renderer, &simulation, c, profileConfig)

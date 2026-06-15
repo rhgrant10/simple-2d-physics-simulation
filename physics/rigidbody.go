@@ -4,6 +4,7 @@ import "github.com/rhgrant10/sim/geo"
 
 type RigidBody struct {
 	Velocity geo.Vec2
+	PrevPos  geo.Vec2
 	Mass     float64
 }
 

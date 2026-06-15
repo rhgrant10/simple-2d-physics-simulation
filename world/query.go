@@ -17,6 +17,14 @@ type View3[A, B, C any] struct {
 	C      *C
 }
 
+type View4[A, B, C, D any] struct {
+	Entity Entity
+	A      *A
+	B      *B
+	C      *C
+	D      *D
+}
+
 func Query2[A, B any](w *World) iter.Seq[*View2[A, B]] {
 	setA := getSet[A](w)
 	setB := getSet[B](w)
@@ -35,6 +43,20 @@ func Query3[A, B, C any](w *World) iter.Seq[*View3[A, B, C]] {
 	setC := getSet[C](w)
 	return func(yield func(*View3[A, B, C]) bool) {
 		for each := range intersection3(setA, setB, setC) {
+			if !yield(each) {
+				return
+			}
+		}
+	}
+}
+
+func Query4[A, B, C, D any](w *World) iter.Seq[*View4[A, B, C, D]] {
+	setA := getSet[A](w)
+	setB := getSet[B](w)
+	setC := getSet[C](w)
+	setD := getSet[D](w)
+	return func(yield func(*View4[A, B, C, D]) bool) {
+		for each := range intersection4(setA, setB, setC, setD) {
 			if !yield(each) {
 				return
 			}
@@ -78,6 +100,30 @@ func intersection3[A, B, C any](a *SparseSet[A], b *SparseSet[B], c *SparseSet[C
 				continue
 			}
 			v := View3[A, B, C]{Entity: e, A: &a.dense[i], B: bComponent, C: cComponent}
+			if !yield(&v) {
+				return
+			}
+		}
+	}
+}
+
+func intersection4[A, B, C, D any](a *SparseSet[A], b *SparseSet[B], c *SparseSet[C], d *SparseSet[D]) iter.Seq[*View4[A, B, C, D]] {
+	return func(yield func(*View4[A, B, C, D]) bool) {
+		for i := range a.denseOwners {
+			e := a.denseOwners[i]
+			bComponent, bOk := b.Lookup(e)
+			if !bOk {
+				continue
+			}
+			cComponent, cOk := c.Lookup(e)
+			if !cOk {
+				continue
+			}
+			dComponent, dOk := d.Lookup(e)
+			if !dOk {
+				continue
+			}
+			v := View4[A, B, C, D]{Entity: e, A: &a.dense[i], B: bComponent, C: cComponent, D: dComponent}
 			if !yield(&v) {
 				return
 			}
