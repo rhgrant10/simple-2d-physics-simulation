@@ -1,7 +1,6 @@
 package geo
 
 import (
-	"cmp"
 	"math"
 	"slices"
 )
@@ -50,11 +49,25 @@ func buildBVH(nodes []bvnode, longAxisIsX bool) bvnode {
 	}
 	if longAxisIsX {
 		slices.SortFunc(nodes, func(a, b bvnode) int {
-			return cmp.Compare(a.aabb.Center().X, b.aabb.Center().X)
+			delta := a.aabb.Center().X - b.aabb.Center().X
+			if delta == 0 {
+				return 0
+			} else if delta < 0 {
+				return -1
+			}
+			return 1
+			// return cmp.Compare(a.aabb.Center().X, b.aabb.Center().X)
 		})
 	} else {
 		slices.SortFunc(nodes, func(a, b bvnode) int {
-			return cmp.Compare(a.aabb.Center().Y, b.aabb.Center().Y)
+			delta := a.aabb.Center().Y - b.aabb.Center().Y
+			if delta == 0 {
+				return 0
+			} else if delta < 0 {
+				return -1
+			}
+			return 1
+			// return cmp.Compare(a.aabb.Center().Y, b.aabb.Center().Y)
 		})
 	}
 	mid := len(nodes) / 2

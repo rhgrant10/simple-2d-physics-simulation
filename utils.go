@@ -20,7 +20,7 @@ func seedFromString(s string) int64 {
 	return int64(binary.BigEndian.Uint64(h[:8]))
 }
 
-func HSLToRGB(h, s, l float64) color.RGBA {
+func HSLToRGB(h, s, l, a float64) color.RGBA {
 	// Achromatic case
 	if s == 0 {
 		v := uint8(math.Round(l * 255))
@@ -51,5 +51,5 @@ func HSLToRGB(h, s, l float64) color.RGBA {
 	r := uint8(math.Round((r1 + m) * 255))
 	g := uint8(math.Round((g1 + m) * 255))
 	b := uint8(math.Round((b1 + m) * 255))
-	return color.RGBA{r, g, b, 255}
+	return color.RGBA{r, g, b, uint8(255 * a)}
 }

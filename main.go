@@ -66,7 +66,7 @@ func main() {
 	world.AddComponent(w, floor, geo.Transform{Pos: geo.Vec2{X: -20, Y: -5}})
 	world.AddComponent(w, floor, mesh.Rectangle{Width: 100, Height: 10, Color: containerColor})
 	world.AddComponent(w, floor, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
-	world.AddComponent(w, floor, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+	world.AddComponent(w, floor, physics.Material{Restitution: 0.65, Friction: physics.FrictionRubber})
 	world.AddComponent(w, floor, physics.RigidBody{})
 
 	leftWall := world.Spawn(w)
@@ -74,7 +74,7 @@ func main() {
 	world.AddComponent(w, leftWall, geo.Transform{Pos: geo.Vec2{X: -65, Y: 10}})
 	world.AddComponent(w, leftWall, mesh.Rectangle{Width: width, Height: height, Color: containerColor})
 	world.AddComponent(w, leftWall, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
-	world.AddComponent(w, leftWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+	world.AddComponent(w, leftWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionRubber})
 	world.AddComponent(w, leftWall, physics.RigidBody{})
 
 	rightWall := world.Spawn(w)
@@ -82,7 +82,7 @@ func main() {
 	world.AddComponent(w, rightWall, geo.Transform{Pos: geo.Vec2{X: 30, Y: 10}})
 	world.AddComponent(w, rightWall, mesh.Rectangle{Width: width, Height: height, Color: containerColor})
 	world.AddComponent(w, rightWall, collision.Collider(&collision.BoxCollider{HalfW: width / 2, HalfH: height / 2}))
-	world.AddComponent(w, rightWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionIce})
+	world.AddComponent(w, rightWall, physics.Material{Restitution: 0.65, Friction: physics.FrictionRubber})
 	world.AddComponent(w, rightWall, physics.RigidBody{})
 
 	maxBallRadius := 0.0
@@ -109,14 +109,15 @@ func main() {
 			Mass: density * math.Pi * radius * radius,
 		})
 		world.AddComponent(w, ball, mesh.Circle{Radius: radius, Color: HSLToRGB(
-			rng.Float64()*0,
-			0.5, //0.2*float64(rng.Intn(4)+1),
-			densityAlpha,
+			230.0, //rng.Float64()*0,
+			1.0,   //densityAlpha,
+			0.75,  //0.2*float64(rng.Intn(4)+1),
+			0.7,
 		)})
 		world.AddComponent(w, ball, collision.Collider(&collision.CircleCollider{Radius: radius}))
 		world.AddComponent(w, ball, physics.Material{
-			Restitution: 0.0,
-			Friction:    physics.KineticFriction(rng.Float64()*0.2 + 0.1)})
+			Restitution: 0.5,
+			Friction:    physics.KineticFriction(0.5)})
 	}
 
 	// run the simulation

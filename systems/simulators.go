@@ -1,6 +1,7 @@
 package systems
 
 import (
+	"math"
 	"time"
 
 	"github.com/rhgrant10/sim/collision"
@@ -96,7 +97,7 @@ func (s *XPBDSimulator) Step(w *world.World, dt float64) {
 			rb.Velocity = entities[i].GetTransform().Pos.Sub(rb.PrevPos).Scale(iH)
 		}
 		for i := range contactInfos {
-			s.solveVelocity(&contactInfos[i])
+			s.solveVelocity(&contactInfos[i], h)
 		}
 	}
 }
@@ -118,24 +119,50 @@ func (s *XPBDSimulator) solveContact(info *collision.CollisionInfo) {
 	info.Depth -= deltaLambda * invMassTotal
 }
 
-func (s *XPBDSimulator) solveVelocity(info *collision.CollisionInfo) {
+func (s *XPBDSimulator) solveVelocity(info *collision.CollisionInfo, h float64) {
 	invMassA := info.A.GetRigidBody().InverseMass()
 	invMassB := info.B.GetRigidBody().InverseMass()
 	invMassTotal := invMassA + invMassB
+	if invMassTotal <= 0 {
+		return
+	}
 
 	relBefore := info.RelativeVelocity
 	relAfter := info.A.GetRigidBody().Velocity.Sub(info.B.GetRigidBody().Velocity)
 	approachSpeedBefore := relBefore.Dot(info.Normal)
 	approachSpeedAfter := relAfter.Dot(info.Normal)
-	if approachSpeedBefore < 0 {
-		// objects were approaching each other
-		restitution := (info.A.GetMaterial().Restitution + info.B.GetMaterial().Restitution) / 2
-		target := approachSpeedBefore * -restitution
-		delta := target - approachSpeedAfter
-		correction := info.Normal.Scale(delta / invMassTotal)
-		info.A.GetRigidBody().Velocity = info.A.GetRigidBody().Velocity.Add(correction.Scale(invMassA))
-		info.B.GetRigidBody().Velocity = info.B.GetRigidBody().Velocity.Sub(correction.Scale(invMassB))
+
+	if approachSpeedBefore >= 0 {
+		// objects were not even approaching each other
+		return
 	}
 
-	// TODO: Friction
+	// restitution
+	restitution := (info.A.GetMaterial().Restitution + info.B.GetMaterial().Restitution) / 2
+	if math.Abs(approachSpeedBefore) < 2*h*math.Abs(physics.Gravity.Y) {
+		restitution = 0.0
+	}
+	target := approachSpeedBefore * -restitution
+	delta := target - approachSpeedAfter
+	impulseMagnitude := delta / invMassTotal
+	correction := info.Normal.Scale(impulseMagnitude)
+	info.A.GetRigidBody().Velocity = info.A.GetRigidBody().Velocity.Add(correction.Scale(invMassA))
+	info.B.GetRigidBody().Velocity = info.B.GetRigidBody().Velocity.Sub(correction.Scale(invMassB))
+
+	relAfter = info.A.GetRigidBody().Velocity.Sub(info.B.GetRigidBody().Velocity)
+	relNormal := relAfter.Dot(info.Normal)
+	relTangent := relAfter.Sub(info.Normal.Scale(relNormal))
+
+	if relTangent.Magnitude() < 1e-6 {
+		friction := float64(info.A.GetMaterial().Friction+info.B.GetMaterial().Friction) / 2
+		t := relTangent.Normalized()
+		jt := -relTangent.Dot(t) / invMassTotal
+		if maxJt := friction * math.Abs(impulseMagnitude); jt > maxJt {
+			jt = maxJt
+		} else if minJt := -friction * math.Abs(impulseMagnitude); jt < minJt {
+			jt = minJt
+		}
+		info.A.GetRigidBody().Velocity = info.A.GetRigidBody().Velocity.Add(t.Scale(jt * invMassTotal))
+		info.B.GetRigidBody().Velocity = info.B.GetRigidBody().Velocity.Sub(t.Scale(jt * invMassTotal))
+	}
 }

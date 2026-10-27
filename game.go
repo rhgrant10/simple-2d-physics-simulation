@@ -29,7 +29,7 @@ type ProfilingConfig struct {
 
 func DefaultProfilingConfig() ProfilingConfig {
 	return ProfilingConfig{
-		enabled:     false,
+		enabled:     true,
 		cpuFilename: "cpu.prof",
 		memFilename: "mem.prof",
 		duration:    10 * time.Second,
@@ -114,7 +114,7 @@ func (g *Game) Update() error {
 	}
 
 	now := time.Now()
-	dt := now.Sub(g.lastUpdatedAt).Seconds()
+	dt := now.Sub(g.lastUpdatedAt).Seconds() // timeSince??
 	g.lastUpdatedAt = now
 	g.simulation.Step(&g.world, dt)
 
