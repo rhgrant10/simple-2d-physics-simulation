@@ -2,6 +2,8 @@
 
 A 2D rigid-body physics simulation in Go, built from scratch on [Ebitengine](https://ebitengine.org). It drops a few thousand balls into a box and lets them pile up, bounce, and slide around. Looks kinda like liquid in a container.
 
+![alt text](readme-ss.png)
+
 ## Running it
 
     go run .
