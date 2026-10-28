@@ -153,7 +153,7 @@ func (s *XPBDSimulator) solveVelocity(info *collision.CollisionInfo, h float64) 
 	relNormal := relAfter.Dot(info.Normal)
 	relTangent := relAfter.Sub(info.Normal.Scale(relNormal))
 
-	if relTangent.Magnitude() < 1e-6 {
+	if relTangent.Magnitude() > 1e-6 {
 		friction := float64(info.A.GetMaterial().Friction+info.B.GetMaterial().Friction) / 2
 		t := relTangent.Normalized()
 		jt := -relTangent.Dot(t) / invMassTotal
@@ -162,7 +162,7 @@ func (s *XPBDSimulator) solveVelocity(info *collision.CollisionInfo, h float64) 
 		} else if minJt := -friction * math.Abs(impulseMagnitude); jt < minJt {
 			jt = minJt
 		}
-		info.A.GetRigidBody().Velocity = info.A.GetRigidBody().Velocity.Add(t.Scale(jt * invMassTotal))
-		info.B.GetRigidBody().Velocity = info.B.GetRigidBody().Velocity.Sub(t.Scale(jt * invMassTotal))
+		info.A.GetRigidBody().Velocity = info.A.GetRigidBody().Velocity.Add(t.Scale(jt * invMassA))
+		info.B.GetRigidBody().Velocity = info.B.GetRigidBody().Velocity.Sub(t.Scale(jt * invMassB))
 	}
 }
