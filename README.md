@@ -1,5 +1,13 @@
 # Sim
 
+## How to run
+
+```bash
+$ go run .
+```
+
+Note that cpu profiling is enabled :)
+
 ## Plans
 
 ### Overview
@@ -9,12 +17,5 @@
 [x] Bounce a ball off the ground
 [x] Model energy loss
 [x] Bounce multiple balls off each other
-[ ] Bonuce a ball off the walls
+[x] Bonuce a ball off the walls
 
-### Current objective
-
-Bonuce a ball off the walls
-
-#### Next step
-
-Implement a collision system
